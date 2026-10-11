@@ -1,0 +1,2 @@
+<document version="2.0"><snippet language="py" runnable="true" line-numbers="true"><snippet-file id="code">    def find_student_by_id(self, student_id):
+        return self.students.get(student_id)</snippet-file></snippet><paragraph>would this code work?</paragraph></document>

@@ -1,0 +1,196 @@
+{
+  "thread": {
+    "id": 1001,
+    "user_id": 11,
+    "course_id": 39026,
+    "thread_id": 1000,
+    "editor_id": null,
+    "number": 101,
+    "type": "question",
+    "kind": "normal",
+    "content": "<document version=\"2.0\"><paragraph>Deep thread.</paragraph></document>",
+    "document": "Deep thread.",
+    "is_endorsed": false,
+    "is_anonymous": false,
+    "created_at": "2026-10-07T09:00:00.123456+11:00",
+    "updated_at": "2026-10-07T09:00:00.123456+11:00",
+    "deleted_at": null,
+    "comments": [],
+    "accepted_id": null,
+    "answers": [
+      {
+        "id": 5001,
+        "user_id": 12,
+        "course_id": 39026,
+        "thread_id": 1000,
+        "editor_id": null,
+        "number": 1,
+        "type": "answer",
+        "kind": "normal",
+        "content": "<document version=\"2.0\"><paragraph>Answer.</paragraph></document>",
+        "document": "Answer.",
+        "is_endorsed": false,
+        "is_anonymous": false,
+        "created_at": "2026-10-07T10:00:00.123456+11:00",
+        "updated_at": "2026-10-07T10:00:00.123456+11:00",
+        "deleted_at": null,
+        "comments": [
+          {
+            "id": 4002,
+            "user_id": 11,
+            "course_id": 39026,
+            "thread_id": 1000,
+            "editor_id": null,
+            "number": 3,
+            "type": "comment",
+            "kind": "normal",
+            "content": "<document version=\"2.0\"><paragraph>Depth 2.</paragraph></document>",
+            "document": "Depth 2.",
+            "is_endorsed": false,
+            "is_anonymous": false,
+            "created_at": "2026-10-07T10:02:00.123456+11:00",
+            "updated_at": "2026-10-07T10:02:00.123456+11:00",
+            "deleted_at": null,
+            "comments": [
+              {
+                "id": 4003,
+                "user_id": 11,
+                "course_id": 39026,
+                "thread_id": 1000,
+                "editor_id": null,
+                "number": 4,
+                "type": "comment",
+                "kind": "normal",
+                "content": "<document version=\"2.0\"><paragraph>Depth 3.</paragraph></document>",
+                "document": "Depth 3.",
+                "is_endorsed": false,
+                "is_anonymous": false,
+                "created_at": "2026-10-07T10:03:00.123456+11:00",
+                "updated_at": "2026-10-07T10:03:00.123456+11:00",
+                "deleted_at": null,
+                "comments": [
+                  {
+                    "id": 4004,
+                    "user_id": 11,
+                    "course_id": 39026,
+                    "thread_id": 1000,
+                    "editor_id": null,
+                    "number": 5,
+                    "type": "comment",
+                    "kind": "normal",
+                    "content": "<document version=\"2.0\"><paragraph>Depth 4.</paragraph></document>",
+                    "document": "Depth 4.",
+                    "is_endorsed": false,
+                    "is_anonymous": false,
+                    "created_at": "2026-10-07T10:04:00.123456+11:00",
+                    "updated_at": "2026-10-07T10:04:00.123456+11:00",
+                    "deleted_at": null,
+                    "comments": [
+                      {
+                        "id": 4005,
+                        "user_id": 11,
+                        "course_id": 39026,
+                        "thread_id": 1000,
+                        "editor_id": null,
+                        "number": 6,
+                        "type": "comment",
+                        "kind": "normal",
+                        "content": "<document version=\"2.0\"><paragraph>Depth 5.</paragraph></document>",
+                        "document": "Depth 5.",
+                        "is_endorsed": false,
+                        "is_anonymous": false,
+                        "created_at": "2026-10-07T10:05:00.123456+11:00",
+                        "updated_at": "2026-10-07T10:05:00.123456+11:00",
+                        "deleted_at": null,
+                        "comments": [
+                          {
+                            "id": 4006,
+                            "user_id": 11,
+                            "course_id": 39026,
+                            "thread_id": 1000,
+                            "editor_id": null,
+                            "number": 7,
+                            "type": "comment",
+                            "kind": "normal",
+                            "content": "<document version=\"2.0\"><paragraph>Depth 6.</paragraph></document>",
+                            "document": "Depth 6.",
+                            "is_endorsed": false,
+                            "is_anonymous": false,
+                            "created_at": "2026-10-07T10:06:00.123456+11:00",
+                            "updated_at": "2026-10-07T10:06:00.123456+11:00",
+                            "deleted_at": null,
+                            "comments": [
+                              {
+                                "id": 4007,
+                                "user_id": 11,
+                                "course_id": 39026,
+                                "thread_id": 1000,
+                                "editor_id": null,
+                                "number": 8,
+                                "type": "comment",
+                                "kind": "normal",
+                                "content": "<document version=\"2.0\"><paragraph>Depth 7.</paragraph></document>",
+                                "document": "Depth 7.",
+                                "is_endorsed": false,
+                                "is_anonymous": false,
+                                "created_at": "2026-10-07T10:07:00.123456+11:00",
+                                "updated_at": "2026-10-07T10:07:00.123456+11:00",
+                                "deleted_at": null,
+                                "comments": []
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "title": "Deep",
+    "reply_count": 7
+  },
+  "users": [
+    {
+      "id": 11,
+      "role": "user",
+      "name": "Student One",
+      "course_role": "student"
+    },
+    {
+      "id": 12,
+      "role": "user",
+      "name": "Staff Admin",
+      "course_role": "admin"
+    },
+    {
+      "id": 13,
+      "role": "user",
+      "name": "Tutor Three",
+      "course_role": "tutor"
+    },
+    {
+      "id": 14,
+      "role": "user",
+      "name": "Viewer Student",
+      "course_role": "student"
+    },
+    {
+      "id": 15,
+      "role": "user",
+      "name": "Former Member",
+      "course_role": null
+    },
+    {
+      "id": 16,
+      "role": "user",
+      "name": "Odd Role",
+      "course_role": "teaching_fellow"
+    }
+  ],
+  "viewer_id": 14
+}
