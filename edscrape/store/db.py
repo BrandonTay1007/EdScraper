@@ -14,6 +14,7 @@ import sqlite3
 from datetime import UTC, datetime
 from importlib import resources
 from pathlib import Path
+from typing import Any
 
 from edscrape import paths
 from edscrape.models import Course, Post, RoleClass, Thread
@@ -425,7 +426,7 @@ def finish_sync_run(
     posts_changed: int = 0,
     error: str | None = None,
     finished_at: str | None = None,
-) -> dict:
+) -> dict[str, Any]:
     finished = finished_at or utcnow_iso()
     conn.execute(
         "UPDATE sync_runs SET finished_at=?, status=?, threads_seen=?, threads_changed=?, "

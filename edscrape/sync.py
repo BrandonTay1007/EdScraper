@@ -35,6 +35,7 @@ from edscrape.models import (
 from edscrape.store import db
 
 Progress = Callable[[SyncEvent], None]
+MAX_PARSE_ERRORS = 5  # parser failures recorded per course run (the rest are not listed)
 
 
 def _now() -> datetime:
@@ -182,6 +183,7 @@ def _store_infos(
     course_id: int,
     now: str,
     only_kind: str | None = None,
+    on_parse_error: Callable[[str, Exception], None] | None = None,
 ) -> tuple[int, int]:
     """Parse and upsert posts; returns (posts_new, posts_changed). Thread row must already exist."""
     new = changed = 0
@@ -197,8 +199,9 @@ def _store_infos(
             try:
                 parsed: ParsedContent = parser(info.content_xml, info.text)
                 text, markdown = parsed.text, parsed.markdown
-            except Exception:  # a parser bug must not lose the post; fall back to plain text
-                pass
+            except Exception as e:  # a parser bug must not lose the post; use plain text
+                if on_parse_error is not None:
+                    on_parse_error(info.key, e)
         post = Post(
             key=info.key,
             ref_id=info.ref_id,
@@ -243,6 +246,7 @@ def _ingest_list_item(
     viewer_id: int,
     now: str,
     key: str | None,
+    on_parse_error: Callable[[str, Exception], None] | None = None,
 ) -> tuple[int, int]:
     """Upsert the thread row, then its `thread:<id>` post from the list item (body is in the list).
     `key` is stored as the thread's change_key (None leaves the stored one untouched)."""
@@ -268,6 +272,7 @@ def _ingest_list_item(
         course_id=course_id,
         now=now,
         only_kind="thread",
+        on_parse_error=on_parse_error,
     )
 
 
@@ -280,6 +285,7 @@ def _ingest_detail(
     role_map: dict[str, str],
     viewer_id: int,
     now: str,
+    on_parse_error: Callable[[str, Exception], None] | None = None,
 ) -> tuple[int, int]:
     """Upsert every post of a thread-detail payload and recompute the stored thread flags."""
     thread = data["thread"]
@@ -288,7 +294,13 @@ def _ingest_detail(
     users = _users_for_flagger(conn, course_id, users, _visible_user_ids(thread))
     infos = flagger(thread, users, role_map, viewer_id)
     result = _store_infos(
-        conn, infos.values(), parser, thread_id=thread["id"], course_id=course_id, now=now
+        conn,
+        infos.values(),
+        parser,
+        thread_id=thread["id"],
+        course_id=course_id,
+        now=now,
+        on_parse_error=on_parse_error,
     )
     db.recompute_thread_flags(conn, thread["id"])
     return result
@@ -376,6 +388,17 @@ async def _sync_course(
     counts = {"threads_seen": 0, "threads_changed": 0, "posts_new": 0, "posts_changed": 0}
     errors: list[str] = []
 
+    parse_failures = 0
+
+    def on_parse_error(key: str, exc: Exception) -> None:
+        nonlocal parse_failures
+        parse_failures += 1
+        if parse_failures > MAX_PARSE_ERRORS:
+            return
+        msg = f"parser failed on {key}: {type(exc).__name__}: {exc}"[:200]
+        errors.append(msg)
+        _emit(progress, SyncEvent(cid, "error", 0, None, msg))
+
     def finish(status: str) -> dict:
         run = db.finish_sync_run(
             conn, run_id, status=status, error="; ".join(errors) or None, **counts
@@ -413,6 +436,7 @@ async def _sync_course(
                     viewer_id=viewer_id,
                     now=_iso(now),
                     key=None if replied else key,
+                    on_parse_error=on_parse_error,
                 )
                 conn.commit()
                 counts["threads_seen"] += 1
@@ -461,6 +485,7 @@ async def _sync_course(
                         role_map=cfg.roles,
                         viewer_id=viewer_id,
                         now=_iso(_now()),
+                        on_parse_error=on_parse_error,
                     )
                     if tid in list_keys:
                         db.set_change_key(conn, tid, list_keys[tid])
@@ -494,7 +519,12 @@ async def _sync_course(
         errors.append(str(e))
         _emit(progress, SyncEvent(cid, "error", 0, None, str(e)))
         return finish("error")
-
+    except Exception as e:  # malformed item, archive write failure, ...: fail this course only
+        conn.rollback()
+        msg = f"{type(e).__name__}: {e}"[:200]
+        errors.append(msg)
+        _emit(progress, SyncEvent(cid, "error", 0, None, msg))
+        return finish("error")
     run = finish("partial" if errors else "ok")
     _emit(progress, SyncEvent(cid, "done", counts["threads_seen"], counts["threads_seen"], None))
     return run

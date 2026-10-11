@@ -105,6 +105,7 @@ class FakeEd:
         self.threads = {tid: load(f"thread_{tid}.json") for tid in (DEEP, TOMB, ANON)}
         self.thread_responses: dict[int, list[int]] = {}  # tid -> queued statuses
         self.user_status = 200
+        self.list_override: dict[int, dict] = {}
         self.requests: list[httpx.Request] = []
 
     def item(self, tid: int) -> dict:
@@ -153,6 +154,9 @@ class FakeEd:
     def on_list(self, request):
         self.requests.append(request)
         offset = int(request.url.params.get("offset", 0))
+        cid = int(request.url.path.split("/")[-2])
+        if cid in self.list_override:
+            return httpx.Response(200, json=self.list_override[cid])
         return httpx.Response(200, json=self.pages[offset])
 
     def on_thread(self, request):
@@ -632,6 +636,7 @@ def test_reparse_requires_viewer_id(tmp_home, conn):
 
 async def test_parser_failure_falls_back_to_plain_text(conn, ed, make_client, frozen):
     full_server(ed)
+    events: list[SyncEvent] = []
 
     def bad_parser(xml, text):
         raise ValueError("boom")
@@ -644,9 +649,14 @@ async def test_parser_failure_falls_back_to_plain_text(conn, ed, make_client, fr
             config=Config(),
             client=client,
             conn=conn,
+            progress=events.append,
         )
-    assert report.status == "ok"
+    assert report.status == "partial"
     assert db.post_by_key(conn, "answer:7875984").markdown == "Use the provided project"
+    err = conn.execute("SELECT error FROM sync_runs").fetchone()["error"]
+    assert "parser failed on thread:" in err and "ValueError: boom" in err
+    assert err.count("parser failed") == 5  # capped per run
+    assert any(e.stage == "error" and "parser failed" in e.message for e in events)
 
 
 def test_change_key_is_stable_and_sensitive():
@@ -688,3 +698,23 @@ async def test_sync_without_injected_parser_imports_lane_b_lazily(conn, ed, make
 async def run_default(conn, make_client):
     async with make_client() as client:
         return await sync([CID], config=Config(), client=client, conn=conn)
+
+
+async def test_unexpected_list_error_fails_that_course_only(conn, ed, make_client, frozen):
+    full_server(ed)
+    ed.list_override[35219] = {"threads": [{"id": 1}], "users": []}  # malformed: no course_id
+    async with make_client() as client:
+        report = await sync(
+            [35219, CID],
+            parser=fake_parser,
+            flagger=fake_flagger,
+            config=Config(),
+            client=client,
+            conn=conn,
+        )
+    runs = conn.execute("SELECT course_id, status, error FROM sync_runs ORDER BY id").fetchall()
+    assert [(r["course_id"], r["status"]) for r in runs] == [(35219, "error"), (CID, "ok")]
+    assert "KeyError" in runs[0]["error"]
+    assert report.status == "partial"
+    assert conn.execute("SELECT COUNT(*) FROM sync_runs WHERE status='running'").fetchone()[0] == 0
+    assert len(db.threads_by_course(conn, CID)) == 135

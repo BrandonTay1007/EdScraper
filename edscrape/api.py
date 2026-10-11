@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import random
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -137,7 +138,9 @@ class EdClient:
     def _write_raw(self, target: Path, resp: httpx.Response) -> None:
         if self._archive:
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(resp.content)
+            tmp = target.with_name(target.name + ".tmp")
+            tmp.write_bytes(resp.content)
+            os.replace(tmp, target)
 
     # -- public GET methods ------------------------------------------------------------------
 

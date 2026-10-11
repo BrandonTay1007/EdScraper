@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import httpx
@@ -206,3 +207,24 @@ def test_client_exposes_get_methods_only():
     assert public == {"get_user", "list_threads", "iter_pages", "iter_threads", "get_thread"}
     for forbidden in ("post", "put", "patch", "delete", "request", "send"):
         assert not hasattr(EdClient, forbidden)
+
+
+async def test_archive_write_is_atomic(tmp_home, monkeypatch):
+    target = paths.raw_dir() / "user.json"
+    target.parent.mkdir(parents=True)
+    target.write_text("old")
+    real_replace = os.replace
+    seen = []
+
+    def spy(src, dst):
+        seen.append((Path(src).name, Path(src).read_text()))
+        real_replace(src, dst)
+
+    monkeypatch.setattr(os, "replace", spy)
+    with respx.mock(assert_all_mocked=True) as router:
+        router.get(f"{API}/user").mock(return_value=httpx.Response(200, json={"a": 1}))
+        async with client() as c:
+            await c.get_user()
+    assert seen == [("user.json.tmp", '{"a":1}')]
+    assert json.loads(target.read_text()) == {"a": 1}
+    assert not list(target.parent.glob("*.tmp"))
