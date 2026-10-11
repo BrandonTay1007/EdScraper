@@ -287,3 +287,35 @@ def test_units_pick_saves_selection(home, monkeypatch):
     }
     conn.close()
     assert invoke("units", "--pick", input="9\n").exit_code == 2
+
+
+def _two_keyword_threads():
+    c = db.connect()
+    add_thread(c, 110, 1001, "Question about A1 marking", "x", number=9)
+    add_thread(c, 111, 1001, "ass1 other", "x", number=10)
+    c.close()
+
+
+def test_confirm_enter_saves_nothing_and_asks_again(home, monkeypatch):
+    _two_keyword_threads()
+    monkeypatch.setattr(brief, "default_run_claude", lambda argv, prompt: "## x\n- y")
+    monkeypatch.setattr(cli, "_is_tty", lambda: True)
+    res = invoke("brief", "fit1001", "A1", input="\n")
+    assert res.exit_code == 0, res.output
+    assert config_mod.load().assignments == {}
+    assert "Include which?" in invoke("brief", "fit1001", "A1", input="\n").output
+
+
+def test_confirm_explicit_none_excludes_all(home, monkeypatch):
+    _two_keyword_threads()
+    monkeypatch.setattr(brief, "default_run_claude", lambda argv, prompt: "## x\n- y")
+    monkeypatch.setattr(cli, "_is_tty", lambda: True)
+    assert invoke("brief", "fit1001", "A1", input="none\n").exit_code == 0
+    assert config_mod.load().assignments["1001"]["A1"] == {"keep": [], "exclude": [110, 111]}
+
+
+def test_brief_cli_prints_model_mismatch_note(home, monkeypatch):
+    monkeypatch.setattr(brief, "default_run_claude", lambda argv, prompt: "## x\n- y")
+    assert invoke("brief", "fit1001", "A1").exit_code == 0
+    res = invoke("brief", "fit1001", "A1", "--model", "opus")
+    assert "cached brief was built with sonnet; use --force to rebuild with opus" in res.output

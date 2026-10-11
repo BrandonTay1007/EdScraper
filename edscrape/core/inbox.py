@@ -47,7 +47,7 @@ def _fetch(conn: sqlite3.Connection, where: str, params: builtins.list) -> built
     threads: dict[int, Thread] = {}
     items: builtins.list[InboxItem] = []
     for r in rows:
-        post = db._post(r)
+        post = db.post_from_row(r)
         if post.thread_id not in threads:
             t = db.thread_by_id(conn, post.thread_id)
             if t is None:

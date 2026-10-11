@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import sqlite3
 import sys
 from pathlib import Path
@@ -17,7 +18,7 @@ from edscrape import config as config_mod
 from edscrape import sync as sync_mod
 from edscrape.auth import AuthError
 from edscrape.core import assignments, brief, export, inbox, search, units
-from edscrape.models import Course, InboxItem, SyncEvent
+from edscrape.models import Candidates, Course, InboxItem, SyncEvent
 from edscrape.store import db
 
 EXIT_USAGE = 2
@@ -97,7 +98,7 @@ async def _fetch_user_courses() -> list[tuple[Course, bool]]:
         payload = await client.get_user()
     result = []
     for entry in payload.get("courses") or []:
-        course = sync_mod._course_from_entry(entry)
+        course = sync_mod.course_from_entry(entry)
         features = (entry.get("course") or {}).get("features")
         result.append((course, True if features is None else bool(features.get("discussion"))))
     return result
@@ -291,15 +292,39 @@ def export_cmd(
     out.print(f"Wrote {target}", markup=False)
 
 
-def _confirm_keywords(cand, conn, cfg, course_id: int, name: str) -> None:
-    """Ask which keyword-only threads belong to the assignment, then save the choice."""
+class _WarnCollector(logging.Handler):
+    """Collects warnings from core.brief so the CLI can print them."""
+
+    def __init__(self) -> None:
+        super().__init__(level=logging.WARNING)
+        self.messages: list[str] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.messages.append(record.getMessage())
+
+
+def _confirm_keywords(
+    cand: Candidates, conn: sqlite3.Connection, cfg: config_mod.Config, course_id: int, name: str
+) -> None:
+    """Ask which keyword-only threads belong to the assignment, then save the choice.
+
+    Plain Enter saves nothing (asked again next time); an explicit answer, including "none",
+    keeps the chosen threads and excludes the unselected ones.
+    """
     if not cand.needs_confirm or not _is_tty():
         return
     out.print("Threads that mention the assignment but are not in its category:", markup=False)
     for i, t in enumerate(cand.needs_confirm, 1):
         out.print(f"  {i:>2}. #{t.number} {t.title}", markup=False)
-    answer = Prompt.ask("Include which? (numbers, 'all' or 'none')", default="none", console=out)
+    answer = Prompt.ask(
+        "Include which? (numbers, 'all', 'none', or Enter to decide later)",
+        default="",
+        show_default=False,
+        console=out,
+    )
     answer = answer.strip().lower()
+    if not answer:
+        return
     if answer == "all":
         chosen = {t.id for t in cand.needs_confirm}
     else:
@@ -325,10 +350,16 @@ def brief_cmd(
         f"{len(cand.auto)} thread(s) in category {name!r}, {len(cand.kept)} kept.", markup=False
     )
     _confirm_keywords(cand, conn, cfg, course.id, name)
+    notes = _WarnCollector()
+    logging.getLogger(brief.__name__).addHandler(notes)
     try:
         result = brief.build(conn, cfg, course.id, name, model=model, force=force)
     except brief.BriefError as e:
         raise _fail(f"Brief failed: {e}") from e
+    finally:
+        logging.getLogger(brief.__name__).removeHandler(notes)
+    for msg in notes.messages:
+        err.print(msg, markup=False)
     state = "generated" if result.fresh else "unchanged, reusing cached brief"
     out.print(f"{result.path} ({state}, model {result.model})", markup=False)
     out.print(result.path.read_text(encoding="utf-8"), markup=False)

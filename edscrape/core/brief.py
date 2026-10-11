@@ -8,6 +8,8 @@ assignment's cache dir (overwritten each run).
 from __future__ import annotations
 
 import hashlib
+import logging
+import os
 import re
 import sqlite3
 import subprocess
@@ -24,6 +26,8 @@ from edscrape.core.inbox import items_for_keys, post_url
 from edscrape.models import BriefResult, InboxItem, Post, RoleClass, Thread
 from edscrape.store import db
 
+TITLE_MAX = 120
+log = logging.getLogger(__name__)
 SYSTEM_PROMPT_FILE = "system-prompt.txt"
 TIMEOUT_S = 300
 STUDENT_EXCERPT_LEN = 300
@@ -166,7 +170,7 @@ def assemble_input(conn: sqlite3.Connection, config: Config, course_id: int, nam
             tglyphs = _glyphs_thread(flags.get(f"thread:{t.id}"))
             cat = " / ".join(x for x in (t.category, t.subcategory, t.subsubcategory) if x)
             parts += [
-                f"## Thread: {t.title}{' ' + tglyphs if tglyphs else ''}",
+                f"## Thread: {_excerpt(t.title, TITLE_MAX)}{' ' + tglyphs if tglyphs else ''}",
                 f"Category: {cat}  |  Link: {post_url(course_id, t.id, f'thread:{t.id}')}",
                 "",
                 *block,
@@ -237,8 +241,9 @@ def _render_whats_new(items: list[InboxItem], since: datetime) -> str:
         tags = [it.post.role_class.value]
         if it.flags.edited:
             tags.append("edited")
+        title = _excerpt(it.thread.title, TITLE_MAX)
         lines.append(
-            f'- {it.post.author_name} ({", ".join(tags)}) in "{it.thread.title}": '
+            f'- {it.post.author_name} ({", ".join(tags)}) in "{title}": '
             f"{_excerpt(it.post.text, 160)} [link]({it.url})"
         )
     return "\n".join(lines)
@@ -251,7 +256,11 @@ def _prompt(name: str) -> str:
 def _write_system_prompt(cache: Path, text: str) -> Path:
     cache.mkdir(parents=True, exist_ok=True)
     path = cache / SYSTEM_PROMPT_FILE
-    _atomic_write(path, text)
+    # Holds redacted student excerpts until the next build, so keep it owner-only.
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(text)
+    os.chmod(path, 0o600)
     return path
 
 
@@ -274,7 +283,12 @@ def build(
     latest = _latest(cache)
     meta = _read_meta(latest) if latest else {}
     if latest and not force and meta.get("fingerprint") == inp.fingerprint:
-        return BriefResult(path=latest, fresh=False, whats_new=[], model=meta.get("model") or model)
+        built_with = meta.get("model") or model
+        if built_with != model:
+            log.warning(
+                "cached brief was built with %s; use --force to rebuild with %s", built_with, model
+            )
+        return BriefResult(path=latest, fresh=False, whats_new=[], model=built_with)
 
     argv = [
         "claude",

@@ -19,7 +19,7 @@ def keyword_patterns(name: str) -> list[re.Pattern[str]]:
     m = _NAME_RE.match(name)
     if m:
         n = m.group(2)
-        body = rf"(?:a|ass|assignment\s*|assessment\s*){n}"
+        body = rf"(?:a|ass|assign\s*|assignment\s*|assessment\s*){n}"
     else:
         words = [re.escape(w) for w in name.lower().split()]
         if not words:

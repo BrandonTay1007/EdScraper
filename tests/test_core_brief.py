@@ -227,3 +227,44 @@ def test_slug():
     assert brief.slug("FIT2109 S2 2026 Malaysia ") == "fit2109-s2-2026-malaysia"
     assert brief.slug("A1 / Part 2!") == "a1-part-2"
     assert brief.slug("///") == "x"
+
+
+def test_long_titles_are_capped_everywhere(env):
+    conn, cfg = env
+    long_title = "T" * 300
+    conn.execute("UPDATE threads SET title = ? WHERE id = 102", (long_title,))
+    conn.commit()
+    fake = FakeClaude()
+    brief.build(conn, cfg, 1001, "A1", run_claude=fake, now=T0)
+    assert long_title not in fake.calls[0][1] and "T" * 117 + "..." in fake.calls[0][1]
+    seen = "2026-10-11T05:00:00+00:00"
+    add_post(
+        conn, "comment:1098", 102, 1001, RoleClass.staff, "More.", parent="answer:1021",
+        created=seen, seen=seen,
+    )  # fmt: skip
+    res = brief.build(conn, cfg, 1001, "A1", run_claude=fake, now=T1)
+    assert long_title not in res.path.read_text() and "T" * 117 + "..." in res.path.read_text()
+    _, system = brief.followup_argv(conn, cfg, 1001, "A1")
+    assert long_title not in system and "T" * 117 + "..." in system
+
+
+def test_system_prompt_file_is_private(env):
+    conn, cfg = env
+    argv, _ = brief.followup_argv(conn, cfg, 1001, "A1")
+    sp = pathlib.Path(argv[argv.index("--system-prompt-file") + 1])
+    assert sp.stat().st_mode & 0o777 == 0o600
+    brief.build(conn, cfg, 1001, "A1", run_claude=FakeClaude(), now=T0)  # overwrite keeps mode
+    assert sp.stat().st_mode & 0o777 == 0o600
+
+
+def test_cache_hit_with_other_model_warns(env, caplog):
+    conn, cfg = env
+    fake = FakeClaude()
+    brief.build(conn, cfg, 1001, "A1", run_claude=fake, now=T0)
+    with caplog.at_level("WARNING", logger="edscrape.core.brief"):
+        res = brief.build(conn, cfg, 1001, "A1", model="opus", run_claude=fake, now=T1)
+    assert not res.fresh and res.model == "sonnet" and len(fake.calls) == 1
+    assert "cached brief was built with sonnet; use --force to rebuild with opus" in caplog.text
+    caplog.clear()
+    brief.build(conn, cfg, 1001, "A1", run_claude=fake, now=T1)
+    assert caplog.text == ""

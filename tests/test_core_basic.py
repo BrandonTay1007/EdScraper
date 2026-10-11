@@ -224,8 +224,10 @@ def test_assignments_name_variants_and_other_course(conn):
     add_thread(conn, 121, 1001, "assignment2", "x")
     add_thread(conn, 122, 1001, "Assignment 3", "x")
     cfg = config_mod.Config()
+    add_thread(conn, 123, 1001, "assign 2 question", "x")
+    add_thread(conn, 124, 1001, "assign2", "x")
     c = assignments.candidates(conn, cfg, 1001, "Assignment 2")
-    assert {t.id for t in c.needs_confirm} == {120, 121}
+    assert {t.id for t in c.needs_confirm} == {120, 121, 123, 124}
     c = assignments.candidates(conn, cfg, 1002, "A1")
     assert {t.id for t in c.auto} == {201}
 
