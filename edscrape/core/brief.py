@@ -2,7 +2,8 @@
 
 `claude` is only ever run through an injectable `run_claude(argv, prompt) -> str`. System prompt
 flag used: `--system-prompt-file <path>`; the text is written to `system-prompt.txt` in the
-assignment's cache dir (overwritten each run).
+assignment's cache dir (overwritten each run). That file holds redacted student excerpts until
+the next build, so it is owner-only (0600).
 """
 
 from __future__ import annotations
