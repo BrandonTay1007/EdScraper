@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pathlib
 import subprocess
 from datetime import UTC, datetime
 
@@ -38,7 +39,8 @@ def env(conn, tmp_home):
 
 def cached_files():
     d = paths.briefs_dir()
-    return [p for p in d.rglob("*") if p.is_file()] if d.exists() else []
+    files = [p for p in d.rglob("*") if p.is_file()] if d.exists() else []
+    return [p for p in files if p.name != "system-prompt.txt"]
 
 
 def test_build_argv_stdin_and_cache_layout(env):
@@ -56,9 +58,10 @@ def test_build_argv_stdin_and_cache_layout(env):
         "",
         "--no-session-persistence",
     ]
-    i = argv.index("--system-prompt")
-    assert argv[i + 1].startswith("You write a short study brief")
-    assert "-p" in argv and argv.count("--system-prompt") == 1
+    sp = pathlib.Path(argv[argv.index("--system-prompt-file") + 1])
+    assert sp == paths.briefs_dir() / "fit1001-s2-2026" / "a1" / "system-prompt.txt"
+    assert sp.read_text().startswith("You write a short study brief")
+    assert "--system-prompt" not in argv
 
     assert "https://edstem.org/au/courses/1001/discussion/102?answer=1021" in prompt
     assert "https://edstem.org/au/courses/1001/discussion/103?comment=1031" in prompt
@@ -211,7 +214,9 @@ def test_followup_argv(env):
     conn, cfg = env
     argv, system = brief.followup_argv(conn, cfg, 1001, "A1")
     assert argv[0] == "claude" and "-p" not in argv
-    assert argv[argv.index("--system-prompt") + 1] == system
+    sp = pathlib.Path(argv[argv.index("--system-prompt-file") + 1])
+    assert sp.read_text() == system and sp.name == "system-prompt.txt"
+    assert "--system-prompt" not in argv
     assert "Answer ONLY from the provided messages" in system
     assert "https://edstem.org/au/courses/1001/discussion/102?answer=1021" in system
     for name in STUDENT_NAMES:

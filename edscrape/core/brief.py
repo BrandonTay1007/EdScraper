@@ -1,8 +1,8 @@
 """Per-assignment Claude brief: deterministic input assembly, fingerprint cache, `claude -p` call.
 
 `claude` is only ever run through an injectable `run_claude(argv, prompt) -> str`. System prompt
-flag used: `--system-prompt <text>` (documented in `claude --help`; the `-file` variants are only
-mentioned in passing there).
+flag used: `--system-prompt-file <path>`; the text is written to `system-prompt.txt` in the
+assignment's cache dir (overwritten each run).
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ import subprocess
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from importlib import resources
 from pathlib import Path
 
 from edscrape import paths
@@ -23,7 +24,7 @@ from edscrape.core.inbox import items_for_keys, post_url
 from edscrape.models import BriefResult, InboxItem, Post, RoleClass, Thread
 from edscrape.store import db
 
-PROMPTS_DIR = Path(__file__).resolve().parents[2] / "prompts"
+SYSTEM_PROMPT_FILE = "system-prompt.txt"
 TIMEOUT_S = 300
 STUDENT_EXCERPT_LEN = 300
 TEAM = (RoleClass.staff, RoleClass.helper)
@@ -244,7 +245,14 @@ def _render_whats_new(items: list[InboxItem], since: datetime) -> str:
 
 
 def _prompt(name: str) -> str:
-    return (PROMPTS_DIR / name).read_text(encoding="utf-8")
+    return resources.files("edscrape.prompts").joinpath(name).read_text(encoding="utf-8")
+
+
+def _write_system_prompt(cache: Path, text: str) -> Path:
+    cache.mkdir(parents=True, exist_ok=True)
+    path = cache / SYSTEM_PROMPT_FILE
+    _atomic_write(path, text)
+    return path
 
 
 def build(
@@ -276,8 +284,8 @@ def build(
         "--tools",
         "",
         "--no-session-persistence",
-        "--system-prompt",
-        _prompt("brief.md"),
+        "--system-prompt-file",
+        str(_write_system_prompt(cache, _prompt("brief.md"))),
     ]
     runner = run_claude or default_run_claude
     try:
@@ -332,7 +340,7 @@ def followup_argv(
         "--tools",
         "",
         "--no-session-persistence",
-        "--system-prompt",
-        system_prompt,
+        "--system-prompt-file",
+        str(_write_system_prompt(_cache_dir(conn, course_id, name), system_prompt)),
     ]
     return argv, system_prompt
