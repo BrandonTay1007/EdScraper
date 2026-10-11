@@ -1,0 +1,98 @@
+{
+ "user": {
+  "id": 900001,
+  "role": "user",
+  "name": "Viewer Me",
+  "email": "redacted@example.invalid",
+  "course_role": null,
+  "has_pats": false
+ },
+ "courses": [
+  {
+   "course": {
+    "id": 39026,
+    "realm_id": 5,
+    "code": "FIT2109 S2 2026 Malaysia ",
+    "name": "Unit FIT2109 S2 2026 Malaysia",
+    "year": "2026",
+    "session": "Semester 2",
+    "status": "active",
+    "features": {
+     "discussion": true
+    },
+    "settings": {
+     "default_page": "discussion",
+     "discussion": {
+      "categories": [
+       {
+        "name": "General",
+        "subcategories": []
+       },
+       {
+        "name": "Assignments",
+        "subcategories": [
+         {
+          "name": "A1",
+          "subcategories": []
+         }
+        ]
+       }
+      ]
+     }
+    }
+   },
+   "role": {
+    "user_id": 900001,
+    "course_id": 39026,
+    "role": "student"
+   },
+   "lab": null,
+   "last_active": "2025-06-09T10:00:00+10:00"
+  },
+  {
+   "course": {
+    "id": 35219,
+    "realm_id": 5,
+    "code": "FIT1056 S2 2026",
+    "name": "Unit FIT1056 S2 2026",
+    "year": "2026",
+    "session": "Semester 2",
+    "status": "active",
+    "features": {
+     "discussion": true
+    },
+    "settings": {
+     "default_page": "discussion",
+     "discussion": {
+      "categories": [
+       {
+        "name": "General",
+        "subcategories": []
+       },
+       {
+        "name": "Assignments",
+        "subcategories": [
+         {
+          "name": "A1",
+          "subcategories": []
+         }
+        ]
+       }
+      ]
+     }
+    }
+   },
+   "role": {
+    "user_id": 900001,
+    "course_id": 35219,
+    "role": "staff"
+   },
+   "lab": null,
+   "last_active": "2025-06-09T10:00:00+10:00"
+  }
+ ],
+ "realms": [],
+ "push_key": "x",
+ "push_subscriptions": [],
+ "time": "2026-10-11T06:29:39Z"
+}
