@@ -1,0 +1,99 @@
+{
+ "thread": {
+  "id": 3618955,
+  "user_id": 710001,
+  "course_id": 39026,
+  "original_id": null,
+  "editor_id": null,
+  "accepted_id": null,
+  "duplicate_id": null,
+  "number": 655,
+  "type": "question",
+  "title": "Thread 655",
+  "content": "<document version=\"2.0\"><paragraph>Body of thread 655</paragraph></document>",
+  "document": "Body of thread 655",
+  "category": "Assignments",
+  "subcategory": "A1",
+  "subsubcategory": "",
+  "reply_count": 2,
+  "is_pinned": false,
+  "is_private": false,
+  "is_endorsed": false,
+  "is_answered": false,
+  "is_student_answered": false,
+  "is_staff_answered": false,
+  "is_anonymous": false,
+  "approved_status": "approved",
+  "created_at": "2026-10-02T09:00:00+11:00",
+  "updated_at": "2026-10-03T09:00:00+11:00",
+  "deleted_at": null,
+  "user": {
+   "id": 710001,
+   "role": "user",
+   "name": "Student C",
+   "avatar": null,
+   "course_role": "student",
+   "tutorials": {}
+  },
+  "answers": [],
+  "comments": [
+   {
+    "id": 7877194,
+    "user_id": 0,
+    "course_id": 0,
+    "thread_id": 0,
+    "parent_id": null,
+    "editor_id": null,
+    "number": 1,
+    "type": "",
+    "kind": "",
+    "content": "",
+    "document": "",
+    "is_endorsed": false,
+    "is_anonymous": false,
+    "created_at": "0001-01-01T00:00:00Z",
+    "updated_at": null,
+    "deleted_at": "0001-01-01T00:00:00Z",
+    "comments": [
+     {
+      "id": 7877200,
+      "user_id": 825872,
+      "course_id": 39026,
+      "thread_id": null,
+      "original_id": null,
+      "parent_id": 7877194,
+      "editor_id": null,
+      "number": 2,
+      "type": "comment",
+      "kind": "normal",
+      "content": "<document version=\"2.0\"><paragraph>Replying to a removed comment</paragraph></document>",
+      "document": "Replying to a removed comment",
+      "flag_count": 0,
+      "vote_count": 0,
+      "is_endorsed": false,
+      "is_anonymous": false,
+      "is_private": false,
+      "is_resolved": false,
+      "created_by_bot_id": null,
+      "created_at": "2026-10-03T10:00:00.1+11:00",
+      "updated_at": null,
+      "deleted_at": null,
+      "anonymous_id": 0,
+      "vote": 0,
+      "comments": []
+     }
+    ]
+   }
+  ]
+ },
+ "users": [
+  {
+   "id": 825872,
+   "role": "user",
+   "name": "Staff A",
+   "avatar": null,
+   "course_role": "admin",
+   "tutorials": {}
+  }
+ ]
+}
