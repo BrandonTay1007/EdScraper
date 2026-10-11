@@ -96,7 +96,7 @@ def _within_days(updated_at: str | None, days: int, now: datetime) -> bool:
 # -- payload helpers -------------------------------------------------------------------------------
 
 
-def _course_from_entry(entry: dict[str, Any], selected: bool = False) -> Course:
+def course_from_entry(entry: dict[str, Any], selected: bool = False) -> Course:
     c = entry["course"]
     cats = ((c.get("settings") or {}).get("discussion") or {}).get("categories") or []
     return Course(
@@ -343,7 +343,7 @@ async def sync(
         viewer_id = int(user_payload["user"]["id"])
         db.set_meta(conn, "viewer_user_id", str(viewer_id))
         for entry in user_payload.get("courses") or []:
-            db.upsert_course(conn, _course_from_entry(entry))
+            db.upsert_course(conn, course_from_entry(entry))
         conn.commit()
 
         runs: list[dict] = []

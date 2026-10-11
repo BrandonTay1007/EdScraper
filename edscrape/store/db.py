@@ -257,7 +257,7 @@ def threads_by_course(conn: sqlite3.Connection, course_id: int) -> list[Thread]:
 # -- posts ---------------------------------------------------------------------------------------
 
 
-def _post(row: sqlite3.Row) -> Post:
+def post_from_row(row: sqlite3.Row) -> Post:
     return Post(
         key=row["key"],
         ref_id=row["ref_id"],
@@ -358,13 +358,13 @@ def mark_tombstone(conn: sqlite3.Connection, post_key: str, *, now: str | None =
 
 def post_by_key(conn: sqlite3.Connection, key: str) -> Post | None:
     row = conn.execute("SELECT * FROM posts WHERE key = ?", (key,)).fetchone()
-    return _post(row) if row else None
+    return post_from_row(row) if row else None
 
 
 def posts_by_thread(conn: sqlite3.Connection, thread_id: int) -> list[Post]:
     """Ordered tree: the thread post, then children depth-first, siblings by `number`."""
     rows = conn.execute("SELECT * FROM posts WHERE thread_id = ?", (thread_id,)).fetchall()
-    posts = [_post(r) for r in rows]
+    posts = [post_from_row(r) for r in rows]
     children: dict[str | None, list[Post]] = {}
     keys = {p.key for p in posts}
     for p in posts:
