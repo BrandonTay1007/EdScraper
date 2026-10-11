@@ -114,7 +114,8 @@ def compute(
             is_own=is_own,
             is_endorsed=bool(item.get("is_endorsed")),
             is_deleted=False,
-            editor_id=item.get("editor_id") or None,
+            # anonymous: never store the real editor id (it can identify the author)
+            editor_id=(-1 if is_anon else item["editor_id"]) if item.get("editor_id") else None,
             created_at=item.get("created_at") or "",
             updated_at=item.get("updated_at"),
             content_xml=item.get("content") or "",

@@ -85,7 +85,7 @@ class _Renderer:
                 return f"[{inner or href}]({href})"
             return inner
         if tag == "image":
-            return f"![image]({el.get('src', '')})" if self.md else ""
+            return f"![image]({el.get('src', '')})" if self.md else "[image]"
         if tag in _BLOCKS:
             return self.block(el)
         # underline, mention, unknown tags: inner text only
@@ -146,7 +146,9 @@ class _Renderer:
         if tag == "file":
             url = el.get("url", "")
             name = el.get("filename") or url
-            return f"[{name}]({url})" if self.md and url else name
+            if self.md:
+                return f"[{name}]({url})" if url else name
+            return f"[file: {name}]"
         if tag == "snippet":
             files = [c for c in el if c.tag == "snippet-file"]
             code = "\n".join(self.raw(f) for f in files) if files else self.raw(el)

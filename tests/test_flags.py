@@ -120,6 +120,21 @@ def test_anonymous_preserves_is_own(detail):
     assert own.role_class is RoleClass.unknown
 
 
+def test_anonymous_editor_id_is_sentinel():
+    thread = {
+        "id": 1, "user_id": 11, "created_at": "2026-10-07T09:00:00Z",
+        "comments": [
+            {"id": 2, "user_id": 11, "editor_id": 11, "is_anonymous": True, "comments": []},
+            {"id": 3, "user_id": 11, "editor_id": None, "is_anonymous": True, "comments": []},
+            {"id": 4, "user_id": 11, "editor_id": 11, "is_anonymous": False, "comments": []},
+        ],
+    }  # fmt: skip
+    posts = flags.compute(thread, {}, ROLE_MAP, 99)
+    assert posts["comment:2"].editor_id == -1
+    assert posts["comment:3"].editor_id is None
+    assert posts["comment:4"].editor_id == 11
+
+
 def test_own_non_anonymous(detail):
     own = detail["answer:2002"]
     assert own.is_own is True

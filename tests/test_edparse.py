@@ -40,10 +40,10 @@ CASES = {
         "> **info:** Extension requests close Friday.",
         "Extension requests close Friday.",
     ),
-    "figure": ("![image](https://static.au.edusercontent.com/files/example.png)", ""),
+    "figure": ("![image](https://static.au.edusercontent.com/files/example.png)", "[image]"),
     "file": (
         "Attached.\n\n[schedule.py](https://static.au.edusercontent.com/files/x)",
-        "Attached.\n\nschedule.py",
+        "Attached.\n\n[file: schedule.py]",
     ),
     "snippet": (
         "```py\n    def find_student_by_id(self, student_id):\n"
