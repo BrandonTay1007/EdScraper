@@ -1,0 +1,2 @@
+<document version="2.0"><snippet language="py"><snippet-file id="code">if a < b and c & d:
+    pass</snippet-file></snippet></document>
