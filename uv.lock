@@ -68,7 +68,7 @@ requires-dist = [
     { name = "httpx" },
     { name = "playwright" },
     { name = "rich" },
-    { name = "textual" },
+    { name = "textual", specifier = ">=8.2,<9" },
     { name = "tomli-w" },
     { name = "typer" },
 ]

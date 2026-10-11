@@ -1,0 +1,19 @@
+#banner { background: $error; color: $text; padding: 0 1; height: 1; }
+#status { height: 1; padding: 0 1; color: $text-muted; dock: bottom; margin-bottom: 1; }
+#tiles { height: 6; padding: 0 1; }
+UnitTile { width: 1fr; max-width: 32; height: 6; border: round $primary-darken-2; padding: 0 1; }
+UnitTile.selected { border: heavy $accent; background: $boost; }
+#inbox { height: 1fr; }
+#empty { padding: 1 2; color: $text-muted; }
+.title { text-style: bold; padding: 0 1; }
+.hint { color: $text-muted; padding: 0 1; }
+PostList { height: 1fr; padding: 0 1; }
+PostWidget { height: auto; margin-bottom: 1; padding: 0 1; border-left: tall $primary-darken-2; }
+PostWidget:focus { border-left: thick $accent; background: $boost; }
+#thread-head { height: auto; padding: 0 1; border-bottom: solid $primary-darken-2; }
+#results { height: 1fr; }
+#brief-meta { padding: 0 1; color: $text-muted; }
+#lines { height: 1fr; }
+#custom, #query { margin: 0 1; }
+SelectionList { height: 1fr; margin: 0 1; }
+LoadingIndicator { height: 3; }
