@@ -88,13 +88,25 @@ class EdScrapeApp(App):
         try:
             status = self.run_suspended(self.services.login)
         except Exception as e:
-            self.notify(f"Login failed: {e}", severity="error")
+            self.notify(f"Login failed: {e}", severity="error", markup=False)
             return
         if not status.ok:
-            self.notify(f"Login failed: {status.reason or 'unknown reason'}", severity="error")
+            self.notify(
+                f"Login failed: {status.reason or 'unknown reason'}", severity="error", markup=False
+            )
         status = await self.check_auth()
         if status.ok and self.sync_on_start and self.services.config.unit_ids:
             await self.sync_units(list(self.services.config.unit_ids))
+
+    @staticmethod
+    def _report_text(report: SyncReport) -> str:
+        errors = [str(r["error"]) for r in report.runs if r.get("error")]
+        first = errors[0] if errors else "see sync log"
+        if report.status == "error":
+            return f"Sync failed: {first}"
+        if report.status == "partial":
+            return f"Sync partial: {len(errors)} errors — {first}"
+        return f"Synced: {report.posts_new} new, {report.posts_changed} changed posts"
 
     def sync_progress_text(self, ev: SyncEvent) -> str:
         course = db.course_by_id(self.services.conn, ev.course_id)
@@ -126,10 +138,7 @@ class EdScrapeApp(App):
         except Exception as e:
             self.set_status(f"Sync failed: {e}")
         else:
-            self.set_status(
-                f"Synced ({report.status}): {report.posts_new} new, "
-                f"{report.posts_changed} changed posts"
-            )
+            self.set_status(self._report_text(report))
         finally:
             self.syncing = False
         if self.home is not None:

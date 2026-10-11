@@ -25,8 +25,10 @@ class SearchScreen(Screen):
         self.hits: list[SearchHit] = []
 
     def compose(self) -> ComposeResult:
-        yield Static("Search (all selected units)" if not self.course_id else "Search (one unit)",
-                     classes="title")
+        yield Static(
+            "Search (all selected units)" if not self.course_id else "Search (one unit)",
+            classes="title",
+        )
         yield Input(placeholder="type to search, enter opens the first result", id="query")
         yield DataTable(id="results", cursor_type="row", zebra_stripes=True)
         yield Footer()

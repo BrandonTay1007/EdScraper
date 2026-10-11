@@ -68,10 +68,10 @@ class HomeScreen(Screen):
     def set_banner(self, text: str | None) -> None:
         banner = self.query_one("#banner", Static)
         banner.display = bool(text)
-        banner.update(text or "")
+        banner.update(Text(text or ""))
 
     def set_status(self, text: str) -> None:
-        self.query_one("#status", Static).update(text)
+        self.query_one("#status", Static).update(Text(text))
 
     def current_item(self) -> InboxItem | None:
         table = self.query_one("#inbox", DataTable)
@@ -233,4 +233,3 @@ def db_course(services: Services, course_id: int) -> Course | None:
     from edscrape.store import db
 
     return db.course_by_id(services.conn, course_id)
-

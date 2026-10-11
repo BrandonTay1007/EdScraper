@@ -100,7 +100,7 @@ class BriefScreen(Screen):
                 continue
             for name in assignment_names(course, cfg):
                 self.entries.append((cid, name))
-                names.add_option(f"{unit_label(course.code)}  ·  {name}")
+                names.add_option(Text(f"{unit_label(course.code)}  ·  {name}"))
         if self.entries:
             names.highlighted = 0
         self._stage("picker")
@@ -135,7 +135,7 @@ class BriefScreen(Screen):
             sel = self.query_one("#keywords", SelectionList)
             sel.clear_options()
             for t in cand.needs_confirm:
-                sel.add_option((f"#{t.number} {t.title}", t.id, False))
+                sel.add_option((Text(f"#{t.number} {t.title}"), t.id, False))
             self._stage("confirm")
         else:
             self._build(force=False)
@@ -170,9 +170,12 @@ class BriefScreen(Screen):
     def _build_worker(self, force: bool) -> None:
         assert self.target is not None
         cid, name = self.target
+        svc = self.services
+        # own connection: sync may be writing on services.conn from the event loop
+        conn = svc.open_conn() if svc.open_conn else svc.conn
         try:
             res = brief.build(
-                self.services.conn,
+                conn,
                 self.services.config,
                 cid,
                 name,
@@ -183,13 +186,20 @@ class BriefScreen(Screen):
         except Exception as e:  # BriefError, OSError, anything from the subprocess
             self.app.call_from_thread(self._fail, str(e) or type(e).__name__)
             return
+        finally:
+            if svc.open_conn:
+                conn.close()
         self.app.call_from_thread(self._show, res, text)
 
     def _fail(self, message: str) -> None:
-        self.query_one("#error", Static).update(f"Brief failed: {message}\n\nesc: back")
+        if not self.is_attached:  # user left the screen while the worker ran
+            return
+        self.query_one("#error", Static).update(Text(f"Brief failed: {message}\n\nesc: back"))
         self._stage("error")
 
     def _show(self, res: BriefResult, text: str) -> None:
+        if not self.is_attached:
+            return
         self.result = res
         self.lines = [ln for ln in text.splitlines() if ln.strip()]
         olist = self.query_one("#lines", OptionList)
@@ -198,9 +208,9 @@ class BriefScreen(Screen):
             olist.add_option(_render_line(ln))
         olist.highlighted = 0 if self.lines else None
         state = "just built" if res.fresh else "cached, unchanged"
+        name = self.target[1] if self.target else ""
         self.query_one("#brief-meta", Static).update(
-            f"{self.target[1] if self.target else ''} · {state} · model {res.model}"
-            " · o open link · a ask Claude · f rebuild"
+            Text(f"{name} · {state} · model {res.model} · o open link · a ask Claude · f rebuild")
         )
         self._stage("result")
 
@@ -224,8 +234,11 @@ class BriefScreen(Screen):
         if self.stage != "result" or not self.target:
             return
         cid, name = self.target
-        argv, _ = brief.followup_argv(self.services.conn, self.services.config, cid, name)
-        self.app.run_suspended(self.services.suspend_and_run, argv)  # type: ignore[attr-defined]
+        try:
+            argv, _ = brief.followup_argv(self.services.conn, self.services.config, cid, name)
+            self.app.run_suspended(self.services.suspend_and_run, argv)  # type: ignore[attr-defined]
+        except Exception as e:
+            self.notify(f"Follow-up failed: {e}", severity="error", markup=False)
 
     def action_back(self) -> None:
         if self.stage in ("confirm", "result", "error"):

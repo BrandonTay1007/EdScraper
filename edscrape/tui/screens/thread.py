@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import VerticalScroll
@@ -47,12 +48,14 @@ class ThreadScreen(Screen):
         where = " / ".join(x for x in (thread.category, thread.subcategory) if x)
         top = flags.get(f"thread:{thread.id}")
         glyphs = flag_glyphs(top) if top else ""
-        self.query_one("#thread-head", Static).update(
-            f"[b]{thread.title}[/b] {glyphs}\n"
+        head = Text(thread.title, style="bold")
+        head.append(
+            f" {glyphs}\n"
             f"{unit_label(course.code) if course else thread.course_id} · {where or 'no category'}"
             f" · {thread.type} #{thread.number} · {thread.reply_count} replies"
             f" · started {age(thread.created_at)} ago · updated {age(thread.updated_at)} ago"
         )
+        self.query_one("#thread-head", Static).update(head)
         posts = db.posts_by_thread(conn, thread.id)
         widgets = [
             PostWidget(p, flags[p.key], is_thread_post=p.kind == "thread")
@@ -68,6 +71,12 @@ class ThreadScreen(Screen):
 
     def on_post_widget_focused(self, event: PostWidget.Focused) -> None:
         readstate.mark(self.services.conn, [event.post.key])
+
+    def action_focus_next(self) -> None:
+        self.focus_next()
+
+    def action_focus_previous(self) -> None:
+        self.focus_previous()
 
     def action_back(self) -> None:
         self.app.pop_screen()

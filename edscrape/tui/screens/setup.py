@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Vertical
@@ -73,21 +74,21 @@ class SetupScreen(Screen):
             await self._to_units()
         else:
             self.query_one("#login-msg", Static).update(
-                "A browser window will open. Log in to Ed, then return here.\n"
-                "Press enter to start."
+                "A browser window will open. Log in to Ed, then return here.\nPress enter to start."
             )
 
     async def _do_login(self) -> None:
         try:
             status = self.app.run_suspended(self.services.login)  # type: ignore[attr-defined]
         except Exception as e:
-            self.query_one("#login-msg", Static).update(f"Login failed: {e}. Enter to retry.")
+            self.query_one("#login-msg", Static).update(Text(f"Login failed: {e}. Enter to retry."))
             return
         if status.ok:
             await self._to_units()
         else:
             reason = status.reason or "unknown reason"
-            self.query_one("#login-msg", Static).update(f"Login failed: {reason}. Enter to retry.")
+            msg = Text(f"Login failed: {reason}. Enter to retry.")
+            self.query_one("#login-msg", Static).update(msg)
 
     # -- step 2 -----------------------------------------------------------------------------
 
@@ -106,7 +107,7 @@ class SetupScreen(Screen):
             self.query_one("#login-msg", Static).update("Session expired. Press enter to log in.")
             return
         except Exception as e:
-            msg.update(f"Could not load courses: {e}")
+            msg.update(Text(f"Could not load courses: {e}"))
             return
         eligible = [c for c, discussion in fetched if c.status == "active" and discussion]
         self.courses = {c.id: c for c in eligible}
@@ -118,7 +119,8 @@ class SetupScreen(Screen):
         sel = self.query_one("#courses", SelectionList)
         sel.clear_options()
         for c in eligible:
-            sel.add_option((f"{unit_label(c.code)}  {c.name}  ({c.role})", c.id, c.id in current))
+            label = Text(f"{unit_label(c.code)}  {c.name}  ({c.role})")
+            sel.add_option((label, c.id, c.id in current))
         msg.update("space toggles a unit; c (or the button) continues")
         sel.focus()
 
@@ -150,7 +152,7 @@ class SetupScreen(Screen):
         for cid, text in self.progress.items():
             c = db.course_by_id(self.services.conn, cid)
             lines.append(f"{unit_label(c.code) if c else cid}: {text}")
-        self.query_one("#progress", Static).update("\n".join(lines))
+        self.query_one("#progress", Static).update(Text("\n".join(lines)))
 
     def _on_event(self, ev: SyncEvent) -> None:
         total = f"/{ev.total}" if ev.total is not None else ""
@@ -163,7 +165,7 @@ class SetupScreen(Screen):
         if report is None:
             self.failed = True
             self.query_one("#progress", Static).update(
-                app.status_text + "\n\nPress enter to continue."  # type: ignore[attr-defined]
+                Text(app.status_text + "\n\nPress enter to continue.")  # type: ignore[attr-defined]
             )
         else:
             app.pop_screen()

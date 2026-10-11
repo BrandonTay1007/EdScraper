@@ -39,6 +39,8 @@ class Services:
     run_claude: Callable[[list[str], str], str] | None = None
     # async: (course, has_discussion) for every course in the user's Ed account
     list_courses: Callable[[], Awaitable[list[tuple[Course, bool]]]] | None = None
+    # fresh connection for the brief worker thread (closed by the caller); None = share `conn`
+    open_conn: Callable[[], sqlite3.Connection] | None = None
 
 
 async def _list_courses() -> list[tuple[Course, bool]]:
@@ -64,6 +66,12 @@ def _run_interactive(argv: list[str]) -> int:
         return 127
 
 
+def _open_conn() -> sqlite3.Connection:
+    conn = db.connect()
+    db.migrate(conn)
+    return conn
+
+
 def default_services(config: Config | None = None) -> Services:
     cfg = config or config_mod.load()
     conn = db.connect()
@@ -82,4 +90,5 @@ def default_services(config: Config | None = None) -> Services:
         config=cfg,
         run_claude=None,
         list_courses=_list_courses,
+        open_conn=_open_conn,
     )

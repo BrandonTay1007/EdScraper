@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from rich.text import Text
 from textual.message import Message
 from textual.widgets import Static
 
@@ -19,12 +20,13 @@ class UnitTile(Static):
         super().__init__(**kw)
         self.course_id = course.id
         self.stats = stats
-        self.update(
-            f"[b]{index}  {unit_label(course.code)}[/b]\n"
-            f"{stats['unread']} unread staff/helper\n"
-            f"{stats['later']} {GLYPH_LATER} later staff reply\n"
-            f"{stats['assignments']} assignments active (7d)"
+        text = Text(f"{index}  {unit_label(course.code)}", style="bold")
+        text.append(
+            f"\n{stats['unread']} unread staff/helper"
+            f"\n{stats['later']} {GLYPH_LATER} later staff reply"
+            f"\n{stats['assignments']} assignments active (7d)"
         )
+        self.update(text)
 
     def on_click(self) -> None:
         self.post_message(self.Clicked(self.course_id))

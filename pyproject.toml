@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "httpx",
     "playwright",
-    "textual",
+    "textual>=8.2,<9",
     "rich",
     "typer",
     "tomli-w",
