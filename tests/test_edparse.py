@@ -125,3 +125,35 @@ def test_mixed_inline_formatting_nests():
     result = parse(xml, "")
     assert result.markdown == "**b *bi*** [l](https://x.test)"
     assert result.text == "b bi l"
+
+
+def test_deep_nesting_never_raises():
+    xml = (
+        '<document version="2.0"><paragraph>'
+        + "<bold>" * 500
+        + "x"
+        + "</bold>" * 500
+        + "</paragraph></document>"
+    )
+    result = parse(xml, "fallback")
+    assert (result.markdown, result.text, result.unknown_tags) == (
+        "fallback", "fallback", ["<malformed>"],
+    )  # fmt: skip
+
+
+def test_unknown_block_wrapper_keeps_paragraphs_separated():
+    xml = (
+        '<document version="2.0"><spoiler><paragraph>a</paragraph>'
+        "<paragraph>b</paragraph></spoiler></document>"
+    )
+    result = parse(xml, "")
+    assert result.markdown == "a\n\nb"
+    assert result.text == "a\n\nb"
+    assert result.unknown_tags == ["spoiler"]
+
+
+def test_link_without_text_uses_href_in_both_outputs():
+    xml = '<document version="2.0"><paragraph><link href="https://x.test"/></paragraph></document>'
+    result = parse(xml, "")
+    assert result.markdown == "[https://x.test](https://x.test)"
+    assert result.text == "https://x.test"

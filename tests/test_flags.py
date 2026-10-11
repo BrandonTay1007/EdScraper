@@ -215,8 +215,7 @@ def test_thread_user_object_wins_over_users_map():
     assert p.role_class is RoleClass.student
 
 
-def test_unknown_role_warns_once(detail, caplog):
-    flags._warned.clear()
+def test_unknown_role_warns_once(caplog):
     with caplog.at_level(logging.WARNING, logger="edscrape.flags"):
         run("thread_detail")
         run("thread_detail")
@@ -237,3 +236,29 @@ def test_classify_role_mapping_and_null(caplog):
 
 def test_classify_role_bad_map_value_is_unknown():
     assert flags.classify_role("x", {"x": "wizard"}) is RoleClass.unknown
+
+
+def _guard_case(name):
+    base = {"id": 1, "user_id": 11, "type": "question", "created_at": "2026-10-07T09:00:00Z"}
+    student = {"id": 11, "name": "S", "course_role": "student"}
+    if name == "user_id_zero":
+        return {**base, "user_id": 0}, {}, lambda p: p.user_id is None and not p.is_own
+    if name == "users_missing":
+        return base, {}, lambda p: p.author_name == "" and p.role_class is RoleClass.unknown
+    if name == "content_none":
+        thread = {**base, "content": None, "document": None}
+        return thread, {11: student}, lambda p: p.content_xml == "" and p.text == ""
+    if name == "children_none":
+        return {**base, "answers": None, "comments": None}, {11: student}, lambda p: True
+    # string-keyed users map
+    return base, {"11": student}, lambda p: p.author_name == "S"
+
+
+@pytest.mark.parametrize(
+    "name", ["user_id_zero", "users_missing", "content_none", "children_none", "str_keys"]
+)
+def test_defensive_inputs_do_not_raise(name):
+    thread, users, check = _guard_case(name)
+    posts = flags.compute(thread, users, ROLE_MAP, 11)
+    assert list(posts) == ["thread:1"]
+    assert check(posts["thread:1"])

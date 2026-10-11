@@ -79,16 +79,19 @@ class _Renderer:
             fence = "``" if "`" in inner else "`"
             return f"{fence}{inner}{fence}"
         if tag == "link":
-            inner = self.inline(el)
-            href = el.get("href")
+            href = el.get("href") or ""
+            inner = self.inline(el) or href
             if self.md and href:
-                return f"[{inner or href}]({href})"
+                return f"[{inner}]({href})"
             return inner
         if tag == "image":
             return f"![image]({el.get('src', '')})" if self.md else "[image]"
         if tag in _BLOCKS:
             return self.block(el)
-        # underline, mention, unknown tags: inner text only
+        # underline, mention, unknown tags: inner text only; unknown wrappers around
+        # block children keep their blocks blank-line separated
+        if tag not in _KNOWN and any(c.tag in _BLOCKS for c in el):
+            return self.container(el)
         return self.inline(el)
 
     # -- blocks ---------------------------------------------------------
@@ -214,8 +217,11 @@ def parse(content_xml: str, fallback_text: str) -> ParsedContent:
         return ParsedContent(fallback_text, fallback_text, [_MALFORMED])
     if root.tag != "document":
         return ParsedContent(fallback_text, fallback_text, [_MALFORMED])
-    return ParsedContent(
-        markdown=_Renderer(True).container(root).strip("\n").rstrip(),
-        text=_Renderer(False).container(root).strip("\n").rstrip(),
-        unknown_tags=_collect_unknown(root),
-    )
+    try:
+        return ParsedContent(
+            markdown=_Renderer(True).container(root).strip("\n").rstrip(),
+            text=_Renderer(False).container(root).strip("\n").rstrip(),
+            unknown_tags=_collect_unknown(root),
+        )
+    except RecursionError:
+        return ParsedContent(fallback_text, fallback_text, [_MALFORMED])
